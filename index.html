@@ -205,11 +205,12 @@
                 return { length: Math.max(2, Math.min(9, L)), girth: Math.max(2.5, Math.min(6.5, G)) };
             }
 
-            // Volume: π r^2 h
-            function computeVolume(length, girth) {
-                const r = girth / 2;
-                return Math.PI * r * r * length;
-            }
+            // Volume: corrected based on GitHub help
+           function computeVolume(length, girth) {
+    const r = girth / (2 * Math.PI); // Correct radius from circumference
+    return Math.PI * r * r * length;
+    // Or: return (girth * girth * length) / (4 * Math.PI);
+}
 
             // Adjust partners (GSS-based, median ~7-12 at 40)
             function adjustPartners(reported, age) {
