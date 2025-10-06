@@ -95,6 +95,54 @@
             color: #ff6b6b;
             text-align: center;
         }
+        .svg-btn {
+            margin-left: 8px;
+            padding: 3px 8px;
+            background: #444;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+        .svg-btn:hover {
+            background: #ff4d4d;
+        }
+        .svg-modal-bg {
+            position: fixed;
+            left: 0; top: 0; right: 0; bottom: 0;
+            background: rgba(32,32,32,0.85);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .svg-modal {
+            background: #2a2a2a;
+            padding: 24px 18px 16px 18px;
+            border-radius: 10px;
+            box-shadow: 0 6px 32px #0008;
+            text-align: center;
+            max-width: 320px;
+        }
+        .svg-modal-title {
+            color: #ff4d4d;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+        .svg-modal-close {
+            background: #ff4d4d;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            padding: 6px 16px;
+            margin-top: 8px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .svg-modal-close:hover {
+            background: #e63a3a;
+        }
     </style>
 </head>
 <body>
@@ -106,6 +154,9 @@
 
             <label for="age">Her Age:</label>
             <input type="number" id="age" min="18" max="100" required>
+
+            <label for="height">Her Height (inches):</label>
+            <input type="number" id="height" min="56" max="78" required>
 
             <label for="partners">Reported Partners:</label>
             <input type="number" id="partners" min="1" max="50" required>
@@ -122,13 +173,8 @@
     </div>
 
     <script>
-        console.log('Script loaded'); // Debug: confirm script runs
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('inputForm');
-            if (!form) {
-                console.error('Form not found');
-                return;
-            }
 
             // Updated stats (blended from Veale 2015, Herbenick 2014, Wessells 1996)
             const MU_LENGTH = 5.3; // inches
@@ -187,60 +233,54 @@
                 return [Z1, Z2];
             }
 
-// Mixture model for sampling length and girth, allows rare extreme outliers
-function sampleOne() {
-    // Probability that a sample will be an outlier (e.g., 1.5%)
-    const OUTLIER_CHANCE = 0.015;
+            // Mixture model for sampling length and girth, allows rare extreme outliers
+            function sampleOne() {
+                // Probability that a sample will be an outlier (e.g., 1.5%)
+                const OUTLIER_CHANCE = 0.015;
 
-    // If random draw falls within OUTLIER_CHANCE, generate an outlier
-    if (Math.random() < OUTLIER_CHANCE) {
-        // Outlier: sample from an extreme upper percentile (e.g., 99.9th to 100th)
-        // Option 1: Use a random percentile between 99.9% and 100%
-        const extremePercentile = 0.999 + 0.001 * Math.random();
-        let extremeLength, extremeGirth;
-        if (USE_LOGNORMAL) {
-            extremeLength = Math.exp(MU_LOG_LENGTH + SD_LOG_LENGTH * normInvCDF(extremePercentile));
-            extremeGirth = Math.exp(MU_LOG_GIRTH + SD_LOG_GIRTH * normInvCDF(extremePercentile));
-        } else {
-            extremeLength = MU_LENGTH + SD_LENGTH * normInvCDF(extremePercentile);
-            extremeGirth = MU_GIRTH + SD_GIRTH * normInvCDF(extremePercentile);
-        }
-        // Set realistic but extreme upper bounds for outliers
-        extremeLength = Math.max(8, Math.min(11, extremeLength));
-        extremeGirth = Math.max(6, Math.min(8, extremeGirth));
-        return { length: extremeLength, girth: extremeGirth };
-    } else {
-        // Normal ("non-outlier") sample with correlation
-        const [Zs1, Zs2] = generateCopula(1, RHO);
-        const uL = normCDF(Zs1[0]);
-        const uG = normCDF(Zs2[0]);
-        let L, G;
-        if (USE_LOGNORMAL) {
-            L = Math.exp(MU_LOG_LENGTH + SD_LOG_LENGTH * normInvCDF(uL));
-            G = Math.exp(MU_LOG_GIRTH + SD_LOG_GIRTH * normInvCDF(uG));
-        } else {
-            L = MU_LENGTH + SD_LENGTH * normInvCDF(uL);
-            G = MU_GIRTH + SD_GIRTH * normInvCDF(uG);
-        }
-        // Clamp to realistic human ranges
-        return {
-            length: Math.max(2, Math.min(9, L)),
-            girth: Math.max(2.5, Math.min(6.5, G))
-        };
-    }
-}
+                if (Math.random() < OUTLIER_CHANCE) {
+                    // Outlier: sample from an extreme upper percentile (e.g., 99.9th to 100th)
+                    const extremePercentile = 0.999 + 0.001 * Math.random();
+                    let extremeLength, extremeGirth;
+                    if (USE_LOGNORMAL) {
+                        extremeLength = Math.exp(MU_LOG_LENGTH + SD_LOG_LENGTH * normInvCDF(extremePercentile));
+                        extremeGirth = Math.exp(MU_LOG_GIRTH + SD_LOG_GIRTH * normInvCDF(extremePercentile));
+                    } else {
+                        extremeLength = MU_LENGTH + SD_LENGTH * normInvCDF(extremePercentile);
+                        extremeGirth = MU_GIRTH + SD_GIRTH * normInvCDF(extremePercentile);
+                    }
+                    extremeLength = Math.max(8, Math.min(11, extremeLength));
+                    extremeGirth = Math.max(6, Math.min(8, extremeGirth));
+                    return { length: extremeLength, girth: extremeGirth };
+                } else {
+                    const [Zs1, Zs2] = generateCopula(1, RHO);
+                    const uL = normCDF(Zs1[0]);
+                    const uG = normCDF(Zs2[0]);
+                    let L, G;
+                    if (USE_LOGNORMAL) {
+                        L = Math.exp(MU_LOG_LENGTH + SD_LOG_LENGTH * normInvCDF(uL));
+                        G = Math.exp(MU_LOG_GIRTH + SD_LOG_GIRTH * normInvCDF(uG));
+                    } else {
+                        L = MU_LENGTH + SD_LENGTH * normInvCDF(uL);
+                        G = MU_GIRTH + SD_GIRTH * normInvCDF(uG);
+                    }
+                    return {
+                        length: Math.max(2, Math.min(9, L)),
+                        girth: Math.max(2.5, Math.min(6.5, G))
+                    };
+                }
+            }
 
             // Volume: corrected based on GitHub help
-           function computeVolume(length, girth) {
-    const r = girth / (2 * Math.PI); // Correct radius from circumference
-    return Math.PI * r * r * length;
-    // Or: return (girth * girth * length) / (4 * Math.PI);
-}
+            function computeVolume(length, girth) {
+                const r = girth / (2 * Math.PI);
+                return Math.PI * r * r * length;
+            }
 
             // Adjust partners (GSS-based, median ~7-12 at 40)
             function adjustPartners(reported, age) {
-                const base = Math.min(4.5, Math.log(Math.max(1, age - 17))); // caps at ~50
-                const avg = Math.round(2 + base * 3); // ~7 at 30, ~10 at 40, ~15 at 50
+                const base = Math.min(4.5, Math.log(Math.max(1, age - 17)));
+                const avg = Math.round(2 + base * 3);
                 const adj = Math.max(1, Math.min(50, Math.round(reported * 0.8 + avg * 0.2)));
                 return adj;
             }
@@ -256,17 +296,88 @@ function sampleOne() {
                 return Math.round(100 * normCDF(value, mu, sd));
             }
 
+            // Statistically model hand dimensions based on height (inches)
+            function sampleHandDimensions(heightInches) {
+                // Regression-based means
+                const meanLength = 0.107 * heightInches; // hand length in inches
+                const meanBreadth = 0.045 * heightInches; // palm breadth in inches
+                // Add normal random variation
+                const length = meanLength + (Math.random() - 0.5) * 0.6; // SD ~0.3"
+                const breadth = meanBreadth + (Math.random() - 0.5) * 0.4; // SD ~0.2"
+                return {
+                    length: Math.max(5.5, Math.min(8, length)),
+                    breadth: Math.max(2.3, Math.min(3.8, breadth))
+                };
+            }
+
+            // SVG rendering for the hand + cylinder
+            function generateCylinderHandSVG(length, girth, handLength, handBreadth) {
+                // SVG dimensions
+                const svgW = 200, svgH = 140;
+                // Hand: max stats for scaling
+                const maxHandLength = 8, maxHandBreadth = 4;
+                // Cylinder: max stats for scaling
+                const maxCylinderLength = 9, maxCylinderDia = 6.5 / Math.PI;
+
+                // Hand dimensions in SVG px (ellipse)
+                const handLenPx = handLength / maxHandLength * 90;
+                const handBrPx = handBreadth / maxHandBreadth * 45;
+
+                // Cylinder dimensions in SVG px
+                const cylLenPx = length / maxCylinderLength * 75;
+                const cylDiaPx = (girth / Math.PI) / maxCylinderDia * 32;
+
+                // Center positions
+                const handCx = svgW / 2, handCy = svgH / 2;
+                const cylX = handCx - cylDiaPx / 2, cylY = handCy - cylLenPx / 2;
+
+                // SVG markup
+                return `
+<svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">
+  <!-- Hand grip as ellipse -->
+  <ellipse cx="${handCx}" cy="${handCy}" rx="${handBrPx}" ry="${handLenPx}" fill="#f3d6b6" fill-opacity="0.5"/>
+  <!-- Cylinder -->
+  <rect x="${cylX}" y="${cylY}" width="${cylDiaPx}" height="${cylLenPx}" fill="#b0b0c0" stroke="#333"/>
+  <!-- Cylinder ends -->
+  <ellipse cx="${handCx}" cy="${cylY}" rx="${cylDiaPx/2}" ry="${cylDiaPx/3}" fill="#b0b0c0" stroke="#333"/>
+  <ellipse cx="${handCx}" cy="${cylY+cylLenPx}" rx="${cylDiaPx/2}" ry="${cylDiaPx/3}" fill="#b0b0c0" stroke="#333"/>
+</svg>
+                `;
+            }
+
+            // Modal for SVG display
+            function showSVGModal(svg, title) {
+                let modalBg = document.createElement('div');
+                modalBg.className = "svg-modal-bg";
+                let modal = document.createElement('div');
+                modal.className = "svg-modal";
+                modal.innerHTML = `<div class="svg-modal-title">${title}</div>
+                    <div>${svg}</div>
+                    <button class="svg-modal-close">Close</button>`;
+                modalBg.appendChild(modal);
+                document.body.appendChild(modalBg);
+                modal.querySelector('.svg-modal-close').onclick = function() {
+                    document.body.removeChild(modalBg);
+                };
+                modalBg.onclick = function(e) {
+                    if (e.target === modalBg) document.body.removeChild(modalBg);
+                };
+            }
+
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 try {
-                    console.log('Form submitted'); // Debug: confirm submit
                     const name = document.getElementById('name').value.trim();
                     const age = parseInt(document.getElementById('age').value);
+                    const height = parseFloat(document.getElementById('height').value);
                     let partners = parseInt(document.getElementById('partners').value);
                     const yourLength = parseFloat(document.getElementById('length').value);
                     const yourGirth = parseFloat(document.getElementById('girth').value);
 
-                    if (!name || isNaN(age) || isNaN(partners) || isNaN(yourLength) || isNaN(yourGirth) || yourLength <= 0 || yourGirth <= 0) {
+                    if (!name || isNaN(age) || isNaN(partners) || isNaN(height) ||
+                        isNaN(yourLength) || isNaN(yourGirth) ||
+                        yourLength <= 0 || yourGirth <= 0 ||
+                        height < 56 || height > 78) {
                         document.getElementById('output').innerHTML = '<p class="error">Fill in all fields with valid numbers, champ.</p>';
                         return;
                     }
@@ -275,6 +386,9 @@ function sampleOne() {
                     const yourVolume = computeVolume(yourLength, yourGirth);
                     const lengthPercentile = getPercentile(yourLength, MU_LENGTH, SD_LENGTH, USE_LOGNORMAL);
                     const girthPercentile = getPercentile(yourGirth, MU_GIRTH, SD_GIRTH, USE_LOGNORMAL);
+
+                    // Generate hand stats
+                    const handStats = sampleHandDimensions(height);
 
                     // Generate partners
                     const allVolumes = [yourVolume];
@@ -292,17 +406,36 @@ function sampleOne() {
                     const volumePercentile = Math.round(100 * (1 - yourRank / (partners + 1)));
 
                     let output = `<h3>${name}, ${age} years young, here's the raw deal:</h3>`;
-                    output += `<p><em>Adjusted partners: ${partners} (tweaked for her age). Your stats: ${yourLength}"L x ${yourGirth}"G. Length percentile: ${lengthPercentile}%, Girth: ${girthPercentile}%, Volume rank: #${yourRank}/${partners+1} (${volumePercentile}th percentile).</em></p>`;
-                    output += `<p>${volumePercentile >= 80 ? 'You’re packing serious heat—top shelf.' : volumePercentile >= 60 ? 'You’re outgunning most—girth’s doing work.' : volumePercentile >= 40 ? 'Solid middle of the pack, no complaints.' : 'Lower end, but it’s how you use it.'} That ${yourGirth} girth? Still a crowd-pleaser.</p>`;
+                    output += `<p><em>Adjusted partners: ${partners} (tweaked for her age). Your stats: ${yourLength}"L x ${yourGirth}"G. Length percentile: ${lengthPercentile}%, Girth: ${girthPercentile}%.</em></p>`;
+                    output += `<p>${volumePercentile >= 80 ? 'You’re packing serious heat—top shelf.' : volumePercentile >= 60 ? 'You’re outgunning most—girth’s doing work.' : volumePercentile >= 40 ? 'Solidly average—no shame in the game.' : volumePercentile >= 20 ? 'Below the mean, but remember: chemistry > stats.' : 'Numbers aren’t everything. Confidence wins.'}</p>`;
                     output += `<p><strong>Full ranking (by volume):</strong></p>`;
                     sorted.forEach((d, i) => {
                         const className = d.isYours ? 'yours' : '';
-                        const fmt = d.isYours ? `<strong>${d.name}</strong>: ${d.length.toFixed(1)}"L x ${d.girth.toFixed(1)}"G (${d.vol.toFixed(0)} vol)` : `${d.name}: ${d.length.toFixed(1)}"L x ${d.girth.toFixed(1)}"G (${d.vol.toFixed(0)} vol)`;
-                        output += `<div class="${className} rank-item">${fmt}</div>`;
+                        // SVG button for this partner
+                        const svgBtn = `<button type="button" class="svg-btn" data-idx="${i}">SVG</button>`;
+                        const fmt = d.isYours
+                            ? `<strong>${d.name}</strong>: ${d.length.toFixed(1)}"L x ${d.girth.toFixed(1)}"G (${d.vol.toFixed(0)} vol)${svgBtn}`
+                            : `${d.name}: ${d.length.toFixed(1)}"L x ${d.girth.toFixed(1)}"G (${d.vol.toFixed(0)})${svgBtn}`;
+                        output += `<div class="${className} rank-item" data-idx="${i}">${fmt}</div>`;
                     });
                     output += `<p><small>Data’s legit—blended from top studies. Girth matters more than length, and you’re no slouch there. Keep rocking it.</small></p>`;
 
                     document.getElementById('output').innerHTML = output;
+
+                    // Add SVG button handlers
+                    setTimeout(function() {
+                        const svgBtns = document.querySelectorAll('.svg-btn');
+                        svgBtns.forEach(btn => {
+                            btn.onclick = function(event) {
+                                const idx = parseInt(event.target.getAttribute('data-idx'));
+                                const d = sorted[idx];
+                                const svg = generateCylinderHandSVG(d.length, d.girth, handStats.length, handStats.breadth);
+                                const title = `${d.isYours ? "You" : d.name}: ${d.length.toFixed(1)}" × ${d.girth.toFixed(1)}" inside her hand (${handStats.length.toFixed(1)}" × ${handStats.breadth.toFixed(1)}")`;
+                                showSVGModal(svg, title);
+                            };
+                        });
+                    }, 0);
+
                 } catch (error) {
                     console.error('Error in form submission:', error);
                     document.getElementById('output').innerHTML = '<p class="error">Something broke—check the console for details.</p>';
