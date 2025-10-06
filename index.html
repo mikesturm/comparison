@@ -187,23 +187,48 @@
                 return [Z1, Z2];
             }
 
-            // Sample one (L, G) pair
-            function sampleOne() {
-                const [Zs1, Zs2] = generateCopula(1, RHO);
-                const uL = normCDF(Zs1[0]);
-                const uG = normCDF(Zs2[0]);
-                let L, G;
-                if (USE_LOGNORMAL) {
-                    // Log-normal sampling
-                    L = Math.exp(MU_LOG_LENGTH + SD_LOG_LENGTH * normInvCDF(uL));
-                    G = Math.exp(MU_LOG_GIRTH + SD_LOG_GIRTH * normInvCDF(uG));
-                } else {
-                    // Normal sampling
-                    L = MU_LENGTH + SD_LENGTH * normInvCDF(uL);
-                    G = MU_GIRTH + SD_GIRTH * normInvCDF(uG);
-                }
-                return { length: Math.max(2, Math.min(9, L)), girth: Math.max(2.5, Math.min(6.5, G)) };
-            }
+// Mixture model for sampling length and girth, allows rare extreme outliers
+function sampleOne() {
+    // Probability that a sample will be an outlier (e.g., 1.5%)
+    const OUTLIER_CHANCE = 0.015;
+
+    // If random draw falls within OUTLIER_CHANCE, generate an outlier
+    if (Math.random() < OUTLIER_CHANCE) {
+        // Outlier: sample from an extreme upper percentile (e.g., 99.9th to 100th)
+        // Option 1: Use a random percentile between 99.9% and 100%
+        const extremePercentile = 0.999 + 0.001 * Math.random();
+        let extremeLength, extremeGirth;
+        if (USE_LOGNORMAL) {
+            extremeLength = Math.exp(MU_LOG_LENGTH + SD_LOG_LENGTH * normInvCDF(extremePercentile));
+            extremeGirth = Math.exp(MU_LOG_GIRTH + SD_LOG_GIRTH * normInvCDF(extremePercentile));
+        } else {
+            extremeLength = MU_LENGTH + SD_LENGTH * normInvCDF(extremePercentile);
+            extremeGirth = MU_GIRTH + SD_GIRTH * normInvCDF(extremePercentile);
+        }
+        // Set realistic but extreme upper bounds for outliers
+        extremeLength = Math.max(8, Math.min(11, extremeLength));
+        extremeGirth = Math.max(6, Math.min(8, extremeGirth));
+        return { length: extremeLength, girth: extremeGirth };
+    } else {
+        // Normal ("non-outlier") sample with correlation
+        const [Zs1, Zs2] = generateCopula(1, RHO);
+        const uL = normCDF(Zs1[0]);
+        const uG = normCDF(Zs2[0]);
+        let L, G;
+        if (USE_LOGNORMAL) {
+            L = Math.exp(MU_LOG_LENGTH + SD_LOG_LENGTH * normInvCDF(uL));
+            G = Math.exp(MU_LOG_GIRTH + SD_LOG_GIRTH * normInvCDF(uG));
+        } else {
+            L = MU_LENGTH + SD_LENGTH * normInvCDF(uL);
+            G = MU_GIRTH + SD_GIRTH * normInvCDF(uG);
+        }
+        // Clamp to realistic human ranges
+        return {
+            length: Math.max(2, Math.min(9, L)),
+            girth: Math.max(2.5, Math.min(6.5, G))
+        };
+    }
+}
 
             // Volume: corrected based on GitHub help
            function computeVolume(length, girth) {
