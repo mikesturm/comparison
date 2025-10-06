@@ -252,7 +252,7 @@
 
                     // Generate partners
                     const allVolumes = [yourVolume];
-                    const allData = [{ length: yourLength, girth: yourGirth, isYours: true, name: 'You' }];
+                    const allData = [{ length: yourLength, girth: yourGirth, vol: yourVolume, isYours: true, name: 'You' }];
                     for (let i = 0; i < partners; i++) {
                         const { length, girth } = sampleOne();
                         const vol = computeVolume(length, girth);
