@@ -310,60 +310,61 @@
                 };
             }
 
-            // Stylized SVG rendering for the hand + cylinder, scaled to real measurements
+            // Stylized SVG rendering for the hand + cylinder, scaled to real measurements, with single finger block
             function generateCylinderHandSVG(length, girth, handLength, handBreadth) {
-                // Maximum expected dimensions
-                const maxBarLen = 9;
-                const maxBarDia = 6.5 / Math.PI;
-                const maxHandLen = 8;
-                const maxHandBr = 4;
+                // Calculate cylinder diameter
+                const barDia = girth / Math.PI;
 
-                // SVG canvas
+                // Finger block width: fingers pressed together are narrower than palm breadth
+                const fingerBlockW = handBreadth * 0.8; // 80% of palm width (adjust as needed)
+                const fingerBlockH = handLength * 0.35; // ~35% of hand length
+                // Palm block (hand) sizes
+                const palmW = handBreadth;
+                const palmH = handLength;
+
+                // Find max real dimensions for scaling (to fit SVG)
+                const maxW = Math.max(barDia, palmW) * 1.25;
+                const maxH = Math.max(length, palmH) * 1.25;
+
                 const svgW = 220, svgH = 200;
-                const pxPerInchX = (svgW - 40) / Math.max(maxBarDia, handBreadth, 2.5 * maxHandBr);
-                const pxPerInchY = (svgH - 40) / Math.max(maxBarLen, handLength, 1.3 * maxHandLen);
+                const pxPerInchX = (svgW - 40) / maxW;
+                const pxPerInchY = (svgH - 40) / maxH;
 
-                // Cylinder (as "bullet"/rounded-top)
+                // Main hand palm rectangle (drawn behind)
+                const palmBlockW = palmW * pxPerInchX;
+                const palmBlockH = palmH * pxPerInchY;
+                const palmBlockX = svgW * 0.5 - palmBlockW * 0.5;
+                const palmBlockY = svgH * 0.10 + (svgH - palmBlockH - 40) / 2;
+
+                // Cylinder/bar
                 const cylH = length * pxPerInchY;
-                const cylW = (girth / Math.PI) * pxPerInchX;
-                const barX = svgW * 0.36;
-                const barY = svgH * 0.1 + (Math.max(maxBarLen, handLength) * pxPerInchY - cylH) / 2;
+                const cylW = barDia * pxPerInchX;
+                const cylX = svgW * 0.5 - cylW * 0.5;
+                const cylY = palmBlockY + palmBlockH * 0.12; // a bit down from palm top
+
+                // Cylinder dome (rounded top)
                 const domeR = cylW / 2;
-                const domeCX = barX + domeR;
-                const domeCY = barY + domeR;
+                const domeCX = cylX + domeR;
+                const domeCY = cylY + domeR;
+                const shaftH = cylH - domeR;
+                const shaftY = cylY + domeR;
 
-                const shaftH = cylH - domeR; // Shaft is rest of the height
-                const shaftY = barY + domeR;
+                // Finger block (as a single rounded rectangle "gripping" the bar)
+                const fingerBlockWpx = fingerBlockW * pxPerInchX;
+                const fingerBlockHpx = fingerBlockH * pxPerInchY;
+                // Slightly offset the grip to look like it's wrapping the bar
+                const fingerBlockX = cylX + cylW * 0.53 - fingerBlockWpx * 0.98;
+                const fingerBlockY = cylY + cylH * 0.22;
 
-                // Palm block (hand)
-                const handBlockW = handBreadth * pxPerInchX;
-                const handBlockH = handLength * pxPerInchY;
-                const handBlockX = barX + cylW * 0.5 - handBlockW * 0.2;
-                const handBlockY = barY + cylH * 0.35;
-
-                // Thumb polygon (relative to palm and bar)
+                // Thumb polygon (optional, stylized)
                 const thumbPoly = [
-                    [barX + cylW, barY + cylH * 0.18], // near top right of bar
-                    [barX + cylW + handBlockW * 0.55, barY + cylH * 0.28],
-                    [handBlockX + handBlockW * 0.50, handBlockY + handBlockH * 0.62],
-                    [barX + cylW * 0.65, handBlockY + handBlockH * 0.30],
+                    [cylX + cylW, cylY + cylH * 0.13], // near top right of bar
+                    [cylX + cylW + fingerBlockWpx * 0.48, cylY + cylH * 0.20],
+                    [fingerBlockX + fingerBlockWpx * 0.6, fingerBlockY + fingerBlockHpx * 0.75],
+                    [cylX + cylW * 0.70, fingerBlockY + fingerBlockHpx * 0.38],
                 ].map(pt => pt.join(',')).join(' ');
 
-                // Fingers (4, spaced vertically)
-                const numFingers = 4;
-                const fingerRects = [];
-                const fingerH = handBlockH * 0.19;
-                const fingerW = handBlockW * 0.7;
-                const fingerRad = fingerH / 2;
-                for (let i = 0; i < numFingers; ++i) {
-                    let fx = barX - fingerW + cylW * 0.23;
-                    let fy = barY + cylH * 0.23 + i * (fingerH * 0.97);
-                    fingerRects.push(
-                        `<rect x="${fx.toFixed(1)}" y="${fy.toFixed(1)}" width="${fingerW.toFixed(1)}" height="${fingerH.toFixed(1)}" rx="${fingerRad.toFixed(1)}" fill="black" />`
-                    );
-                }
-
-                // SVG output: new ordering and new cylinder shape
+                // SVG output
                 return `
 <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -374,14 +375,16 @@
     </radialGradient>
   </defs>
   <!-- Palm block (drawn first, behind bar and fingers) -->
-  <rect x="${handBlockX}" y="${handBlockY}" width="${handBlockW}" height="${handBlockH}" fill="black" />
+  <rect x="${palmBlockX}" y="${palmBlockY}" width="${palmBlockW}" height="${palmBlockH}"
+        fill="black" />
   <!-- Cylinder/bar: rounded top (dome) + shaft -->
   <ellipse cx="${domeCX}" cy="${domeCY}" rx="${domeR}" ry="${domeR}" fill="url(#cylShine)" />
-  <rect x="${barX}" y="${shaftY}" width="${cylW}" height="${shaftH}" rx="${domeR * 0.8}" fill="url(#cylShine)" />
-  <!-- Fingers -->
-  ${fingerRects.join('\n')}
-  <!-- Thumb polygon -->
-  <polygon points="${thumbPoly}" fill="black" />
+  <rect x="${cylX}" y="${shaftY}" width="${cylW}" height="${shaftH}" rx="${domeR * 0.8}" fill="url(#cylShine)" />
+  <!-- Finger block: single rounded rectangle, slightly translucent to show bar -->
+  <rect x="${fingerBlockX}" y="${fingerBlockY}" width="${fingerBlockWpx}" height="${fingerBlockHpx}"
+        rx="${fingerBlockHpx * 0.45}" fill="black" opacity="0.88" />
+  <!-- Thumb polygon (stylized) -->
+  <polygon points="${thumbPoly}" fill="black" opacity="0.92" />
 </svg>
                 `;
             }
@@ -448,7 +451,7 @@
 
                     let output = `<h3>${name}, ${age} years young, here's the raw deal:</h3>`;
                     output += `<p><em>Adjusted partners: ${partners} (tweaked for her age). Your stats: ${yourLength}"L x ${yourGirth}"G. Length percentile: ${lengthPercentile}%, Girth: ${girthPercentile}%.</em></p>`;
-                    output += `<p>${volumePercentile >= 80 ? 'You’re packing serious heat—top shelf.' : volumePercentile >= 60 ? 'You’re outgunning most—girth’s doing work.' : volumePercentile >= 40 ? 'You’re right in the mix—solid showing.' : 'There’s all kinds of shapes out there. It’s about the motion, not the ocean.'}</p>`;
+                    output += `<p>${volumePercentile >= 80 ? 'You’re packing serious heat—top shelf.' : volumePercentile >= 60 ? 'You’re outgunning most—girth’s doing work.' : volumePercentile >= 35 ? 'You’re in the middle of the pack—nothing to fear.' : 'You’re on the smaller side, but that’s not the whole story.'}</p>`;
                     output += `<p><strong>Full ranking (by volume):</strong></p>`;
                     sorted.forEach((d, i) => {
                         const className = d.isYours ? 'yours' : '';
