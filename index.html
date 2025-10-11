@@ -123,7 +123,7 @@
             border-radius: 10px;
             box-shadow: 0 6px 32px #0008;
             text-align: center;
-            max-width: 320px;
+            max-width: 400px;
         }
         .svg-modal-title {
             color: #ff4d4d;
@@ -309,85 +309,95 @@
                     breadth: Math.max(2.3, Math.min(3.8, breadth))
                 };
             }
-
-            // Stylized SVG rendering for the hand + cylinder, scaled to real measurements, with single finger block
+            
+            // [FINAL, CORRECTED DESIGN] Hand behind cylinder
             function generateCylinderHandSVG(length, girth, handLength, handBreadth) {
-                // Calculate cylinder diameter
                 const barDia = girth / Math.PI;
+                const svgW = 350,
+                    svgH = 250;
+                const fleshTone = '#E2B698';
 
-                // Finger block width: fingers pressed together are narrower than palm breadth
-                const fingerBlockW = handBreadth * 0.8; // 80% of palm width (adjust as needed)
-                const fingerBlockH = handLength * 0.35; // ~35% of hand length
-                // Palm block (hand) sizes
-                const palmW = handBreadth;
-                const palmH = handLength;
+                // --- Hand SVG Template Data from user ---
+                // [FIX] Removed the internal `transform` from this group
+                const handPathData = `
+                    <g fill="${fleshTone}">
+                        <path d="M590.554,52.88 c-0.496,5.034-0.822,10.029-0.196,15.363c0.613,5.321-1.878,6.495-4.46,8.321c-2.582,1.839-3.873,2.961-4.473,1.961 c0.169-1.761,0.235-3.365,0.235-4.891c0.026-5.256-0.639-9.547,0.143-15.376c0.952-7.16,1.709-10.042,3.991-11.255 c0.117-0.078,0.248-0.143,0.378-0.196C589.354,46.686,591.062,47.846,590.554,52.88z"/>
+                        <path d="M584.281,66.47 c1.265,1.278-0.483,4.473-2.021,8.164c0.026-5.256-0.639-9.547,0.143-15.376c0.952-7.16,1.709-10.042,3.991-11.255 c-2.465,4.134-2.008,9.155-0.874,10.29C586.863,59.636,581.907,64.096,584.281,66.47z"/>
+                        <path d="M598.431,70.865 c-1.617,0.887-3.912,2.008-5.973,2.739c-3.143,1.135-5.725,1.356-4.317-1.578c1.943-4.056,1.813-2.869,1.187-6.43 c-0.626-3.56,0.156-12.05,0.9-17.293c0.743-5.243,2.491-10.694,3.873-12.481c0.456-0.6,1.187-1.017,1.969-1.148 c1.565-0.274,3.313,0.548,3.482,3.182c0.248,3.952-0.835,14.398-0.496,19.028C599.383,61.501,602.5,68.622,598.431,70.865z"/>
+                        <path d="M591.949,58.045 c-3.3,8.829,2.882,9.116,0.509,15.559c-3.143,1.135-5.725,1.356-4.317-1.578c1.943-4.056,1.813-2.869,1.187-6.43 c-0.626-3.56,0.156-12.05,0.9-17.293c0.743-5.243,2.491-10.694,3.873-12.481c0.456-0.6,1.187-1.017,1.969-1.148 c-2.752,2.569-4.16,7.76-3.182,11.633C594.075,50.989,589.328,48.863,591.949,58.045z"/>
+                        <path d="M609.164,64.37 c-0.3,5.165-2.308,7.982-4.617,8.282c-1.93,0.274-4.069-1.239-5.543-4.617c0.626-5.373-1.956-5.582-1.239-13.524 c0.704-7.956-0.104-15.363,1.343-21.61c1.082-4.682,3.782-5.438,5.517-5.06c0.574,0.117,1.056,0.365,1.317,0.626 c1.082,1.082,1.93,2.152,1.93,14.555C607.873,55.423,609.712,54.837,609.164,64.37z"/>
+                        <path d="M604.547,72.652 c-1.93,0.274-4.069-1.239-5.543-4.617c0.626-5.373-1.956-5.582-1.239-13.524c0.704-7.956-0.104-15.363,1.343-21.61 c1.082-4.682,3.782-5.438,5.517-5.06c-2.687,0.822-5.556,4.839-3.678,11.724c-1.943,2.752-2.439,8.673-0.443,11.92 c1.995,3.247-4.173,9.247,1.813,15.859C604.691,69.965,605.017,71.621,604.547,72.652z"/>
+                        <path d="M637.882,81.39 c-0.17,2.543-1.721,5.256-1.721,5.256s1.187,8.047-3.313,17.541c-4.121,6.612-15.976,17.202-15.976,17.202s0.091,0.965,0.287,2.595 c0.574,4.891,2.139,15.767,5.204,23.971c-2.817,3.547-10.707,6.912-20.097,6.495c-3.965-0.169-8.203-1.017-12.429-2.817 c1.239-11.294,1.682-18.858-1.382-30.531c-2.621-3.873-6.364-12.168-7.682-17.046c-1.304-4.865-0.3-14.046,0.509-22.784 c0.039-0.417,0.078-0.809,0.13-1.174c0.861-7.29,2.661-4.682,5.921-7.942c3.43-3.43,6.064-1.995,9.677-4.056 c3.626-2.061,8.281-2.817,10.903-1.108c-1.865-5.66-0.952-12.52-1.656-15.441C604,40.269,604,31.114,609.086,31.283h0.013 c5.06,0.196,6.273,14.698,6.273,14.698s0.952,1.748,1.5,8.021c0.456,2.426,2.908,11.79,2.908,19.902 c0,8.112,3.913,14.32,3.913,14.32s0.248-2.582,2.074-5.034c0.965-4.578,3.717-10.499,8.034-12.82 c0.665-0.352,1.304-0.639,1.917-0.861c0.039-0.013,0.065-0.026,0.104-0.026c3.365-1.148,5.856-0.235,5.647,1.969 C641.221,74.073,638.052,78.859,637.882,81.39z"/>
+                        <path d="M637.882,81.39 c-0.17,2.543-1.721,5.256-1.721,5.256s1.187,8.047-3.313,17.541c-4.121,6.612-15.976,17.202-15.976,17.202s0.091,0.965,0.287,2.595 c-3.286,2.034-9.573,5.517-12.846,4.669c-4.552-1.187-7.734-1.617-6.808,10.499c0.535,6.899,2.856,12.103,4.76,15.298 c-3.965-0.169-8.203-1.017-12.429-2.817c1.239-11.294,1.682-18.858-1.382-30.531c-2.621-3.873-6.364-12.168-7.682-17.046 c-1.304-4.865-0.3-14.046,0.509-22.784c0.039-0.417,0.078-0.809,0.13-1.174c0.522,5.282,2.074,13.589,6.73,16.719 c-3.247,7.056,2.256,17.424,8.934,19.106c6.677,1.682,3.117-0.443,9.612-8.06c6.495-7.616,14.555-5.308,20.175-7.108 c5.621-1.813,3.795-4.695,1.174-7.316c-2.621-2.621-0.313-4.421,1.474-6.925c1.787-2.491,1.148-2.191,0.091-4.682 c-1.056-2.504,7.551-6.364,9.299-9.429c1.356-2.374-0.156-3.469-3.078-2.921c3.365-1.148,5.856-0.235,5.647,1.969 C641.221,74.073,638.052,78.859,637.882,81.39z"/>
+                        <path d="M615.111,72.443 c-2.074-3.704-7.199-5.451-7.199-5.451c-1.865-5.66-0.952-12.52-1.656-15.441C604,40.269,604,31.114,609.086,31.283h0.013 c-3.547,3.873-3.052,11.242-1.721,12.572c1.409,1.409-1.122,7.108,3.43,9.69c4.565,2.582-5.556,3.795,0.691,11.946 C615.072,69.078,615.372,71.204,615.111,72.443z"/>
+                    </g>
+                `;
+                
+                const pathMinX = 579;
+                const pathMinY = 31;
+                const handNaturalW = 62;
+                const handNaturalH = 122;
+                
+                // --- Scaling and Positioning ---
+                const padding = 20;
+                const maxH = Math.max(handLength, length);
+                const scale = (svgH - padding * 2) / maxH;
 
-                // Find max real dimensions for scaling (to fit SVG)
-                const maxW = Math.max(barDia, palmW) * 1.25;
-                const maxH = Math.max(length, palmH) * 1.25;
+                const handDrawH = handLength * scale;
+                const handDrawW = (handNaturalW / handNaturalH) * handDrawH;
+                const handScaleFactor = handDrawH / handNaturalH;
 
-                const svgW = 220, svgH = 200;
-                const pxPerInchX = (svgW - 40) / maxW;
-                const pxPerInchY = (svgH - 40) / maxH;
+                const cylH = length * scale;
+                const cylW = barDia * scale;
+                const cylR = cylW / 2;
 
-                // Main hand palm rectangle (drawn behind)
-                const palmBlockW = palmW * pxPerInchX;
-                const palmBlockH = palmH * pxPerInchY;
-                const palmBlockX = svgW * 0.5 - palmBlockW * 0.5;
-                const palmBlockY = svgH * 0.10 + (svgH - palmBlockH - 40) / 2;
+                const centerX = svgW / 2;
+                const bottomY = svgH - padding;
 
-                // Cylinder/bar
-                const cylH = length * pxPerInchY;
-                const cylW = barDia * pxPerInchX;
-                const cylX = svgW * 0.5 - cylW * 0.5;
-                const cylY = palmBlockY + palmBlockH * 0.12; // a bit down from palm top
+                const handX = centerX - (handDrawW / 2);
+                const handY = bottomY - handDrawH;
 
-                // Cylinder dome (rounded top)
-                const domeR = cylW / 2;
-                const domeCX = cylX + domeR;
-                const domeCY = cylY + domeR;
-                const shaftH = cylH - domeR;
-                const shaftY = cylY + domeR;
+                const cylX = centerX - cylR;
+                const shaftH = Math.max(0, cylH - cylR);
+                const shaftY = bottomY - cylH + (cylR > cylH ? 0 : cylR);
+                const domeCY = shaftY;
 
-                // Finger block (as a single rounded rectangle "gripping" the bar)
-                const fingerBlockWpx = fingerBlockW * pxPerInchX;
-                const fingerBlockHpx = fingerBlockH * pxPerInchY;
-                // Slightly offset the grip to look like it's wrapping the bar
-                const fingerBlockX = cylX + cylW * 0.53 - fingerBlockWpx * 0.98;
-                const fingerBlockY = cylY + cylH * 0.22;
+                // --- Overlap Calculation ---
+                const fingerReach = handBreadth * 1.1;
+                const thumbReach = handLength * 0.35;
+                const overlap = (fingerReach + thumbReach) - girth;
 
-                // Thumb polygon (optional, stylized)
-                const thumbPoly = [
-                    [cylX + cylW, cylY + cylH * 0.13], // near top right of bar
-                    [cylX + cylW + fingerBlockWpx * 0.48, cylY + cylH * 0.20],
-                    [fingerBlockX + fingerBlockWpx * 0.6, fingerBlockY + fingerBlockHpx * 0.75],
-                    [cylX + cylW * 0.70, fingerBlockY + fingerBlockHpx * 0.38],
-                ].map(pt => pt.join(',')).join(' ');
+                const handTransform = `translate(${handX}, ${handY}) scale(${handScaleFactor}) translate(-${pathMinX}, -${pathMinY})`;
 
-                // SVG output
                 return `
 <svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <radialGradient id="cylShine" cx="60%" cy="35%" r="70%">
-      <stop offset="0%" stop-color="#c7d2ff" stop-opacity="0.85"/>
-      <stop offset="65%" stop-color="#7e9ae6" stop-opacity="0.8"/>
-      <stop offset="100%" stop-color="#465cb4" stop-opacity="1"/>
-    </radialGradient>
-  </defs>
-  <!-- Palm block (drawn first, behind bar and fingers) -->
-  <rect x="${palmBlockX}" y="${palmBlockY}" width="${palmBlockW}" height="${palmBlockH}"
-        fill="black" />
-  <!-- Cylinder/bar: rounded top (dome) + shaft -->
-  <ellipse cx="${domeCX}" cy="${domeCY}" rx="${domeR}" ry="${domeR}" fill="url(#cylShine)" />
-  <rect x="${cylX}" y="${shaftY}" width="${cylW}" height="${shaftH}" rx="${domeR * 0.8}" fill="url(#cylShine)" />
-  <!-- Finger block: single rounded rectangle, slightly translucent to show bar -->
-  <rect x="${fingerBlockX}" y="${fingerBlockY}" width="${fingerBlockWpx}" height="${fingerBlockHpx}"
-        rx="${fingerBlockHpx * 0.45}" fill="black" opacity="0.88" />
-  <!-- Thumb polygon (stylized) -->
-  <polygon points="${thumbPoly}" fill="black" opacity="0.92" />
+    <defs>
+        <radialGradient id="cylShine" cx="60%" cy="35%" r="70%">
+            <stop offset="0%" stop-color="#c7d2ff" stop-opacity="0.85"/>
+            <stop offset="65%" stop-color="#7e9ae6" stop-opacity="0.8"/>
+            <stop offset="100%" stop-color="#465cb4" stop-opacity="1"/>
+        </radialGradient>
+    </defs>
+    
+    <!-- Hand -->
+    <g transform="${handTransform}">
+        ${handPathData}
+    </g>
+
+    <!-- Cylinder -->
+    <g>
+      <rect x="${cylX}" y="${shaftY}" width="${cylW}" height="${shaftH}" fill="url(#cylShine)" />
+      <path d="M ${cylX} ${domeCY} A ${cylR} ${cylR} 0 0 1 ${cylX + cylW} ${domeCY}" fill="url(#cylShine)" />
+    </g>
+
+    <!-- Overlap Text -->
+    <text x="${svgW / 2}" y="${svgH - 5}" fill="${overlap > 0 ? 'lightgreen' : '#ff9a9a'}" font-size="12" text-anchor="middle" font-weight="bold">
+        ${overlap > 0 ? `Overlap: ${overlap.toFixed(1)}"` : `Gap: ${Math.abs(overlap).toFixed(1)}"`}
+    </text>
 </svg>
                 `;
             }
+
 
             // Modal for SVG display
             function showSVGModal(svg, title) {
@@ -489,3 +499,4 @@
     </script>
 </body>
 </html>
+
